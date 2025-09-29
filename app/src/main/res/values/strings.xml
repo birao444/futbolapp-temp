@@ -16,11 +16,15 @@
     <string name="nav_record">Historial</string>
     <string name="nav_elementos">Elementos Adicionales</string>
     <string name="nav_campos">Campos de Juego</string>
+    <string name="nav_ajustes">Ajustes</string>
 
     <!-- Contenido para cada sección -->
     <!-- NUEVAS strings para la pantalla principal -->
     <string name="titulo_principal_screen">Pantalla Principal</string>
     <string name="descripcion_principal_screen">Aquí se mostrarán los datos generales recogidos y un resumen de la información más relevante de la aplicación.</string>
+
+    <string name="titulo_ajustes_screen">Configuración</string>
+    <string name="descripcion_ajustes_screen">Aquí podrás configurar las preferencias de la aplicación.</string>
 
     <!-- Estas strings también deberían estar ya si seguiste ejemplos anteriores -->
     <string name="contenido_proximo">Próximo Partido</string>
