@@ -14,17 +14,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.futbolapp.R
-import com.example.futbolapp.ui.navigation.NavItem
 import com.example.futbolapp.ui.navigation.NavigationDrawerContent
+import com.example.futbolapp.ui.screens.*
 import com.example.futbolapp.ui.theme.FutbolAppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,15 +31,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             FutbolAppTheme {
-                var selectedItem by remember { mutableStateOf<NavItem?>(null) }
-                val onItemSelected: (NavItem) -> Unit = { item ->
-                    selectedItem = item
-                }
+                val navController = rememberNavController()
 
-                NavigationDrawerContent(
-                    selectedItem = selectedItem,
-                    onItemSelected = onItemSelected
-                ) {
+                NavigationDrawerContent(navController = navController) {
                     Scaffold(
                         topBar = {
                             TopAppBar(
@@ -52,28 +44,33 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     ) { innerPadding ->
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        NavHost(
+                            navController = navController,
+                            startDestination = "home",
+                            modifier = Modifier.padding(innerPadding)
                         ) {
-                            Text(
-                                text = when (selectedItem?.id) {
-                                    "proximo" -> stringResource(R.string.contenido_proximo)
-                                    "mi_equipo" -> stringResource(R.string.contenido_mi_equipo)
-                                    "partidos" -> stringResource(R.string.contenido_partidos)
-                                    "jugadores" -> stringResource(R.string.contenido_jugadores)
-                                    "alineaciones" -> stringResource(R.string.contenido_alineaciones)
-                                    "estadisticas" -> stringResource(R.string.contenido_estadisticas)
-                                    "record" -> stringResource(R.string.contenido_record)
-                                    "elementos" -> stringResource(R.string.contenido_elementos)
-                                    "campos" -> stringResource(R.string.contenido_campos)
-                                    else -> "Bienvenido a FutbolApp. Desliza desde la izquierda para abrir el menú."
-                                },
-                                style = MaterialTheme.typography.headlineMedium
-                            )
+                            composable("home") {
+                                // Default screen or welcome
+                                androidx.compose.foundation.layout.Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "Bienvenido a FutbolApp. Desliza desde la izquierda para abrir el menú.",
+                                        style = MaterialTheme.typography.headlineMedium
+                                    )
+                                }
+                            }
+                            composable("proximo") { ProximoPartidoScreen() }
+                            composable("mi_equipo") { MiEquipoScreen() }
+                            composable("partidos") { PartidosScreen() }
+                            composable("jugadores") { JugadoresScreen() }
+                            composable("alineaciones") { AlineacionesScreen() }
+                            composable("estadisticas") { EstadisticasScreen() }
+                            composable("record") { RecordScreen() }
+                            composable("elementos") { ElementosScreen() }
+                            composable("campos") { CamposScreen() }
                         }
                     }
                 }

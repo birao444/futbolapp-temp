@@ -27,8 +27,7 @@ data class NavItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationDrawerContent(
-    selectedItem: NavItem?,
-    onItemSelected: (NavItem) -> Unit,
+    navController: androidx.navigation.NavController,
     content: @Composable () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -57,12 +56,12 @@ fun NavigationDrawerContent(
                     NavigationDrawerItem(
                         icon = { Icon(painter = painterResource(item.iconRes), contentDescription = item.title) },
                         label = { Text(item.title) },
-                        selected = selectedItem?.id == item.id,
+                        selected = false,
                         onClick = {
                             coroutineScope.launch {
                                 drawerState.close()
                             }
-                            onItemSelected(item)
+                            navController.navigate(item.id)
                         },
                         modifier = Modifier.padding(4.dp)
                     )
