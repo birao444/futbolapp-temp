@@ -1,21 +1,35 @@
 <resources>
+    <!-- Estas strings probablemente ya las tienes -->
     <string name="app_name">FutbolApp</string>
-    <string name="proximo_partido">Próximo Partido</string>
-    <string name="mi_equipo">Mi Equipo</string>
-    <string name="partidos">Partidos</string>
-    <string name="jugadores">Jugadores</string>
-    <string name="alineaciones">Alineaciones</string>
-    <string name="estadisticas">Estadísticas</string>
-    <string name="record">Récord</string>
-    <string name="elementos">Elementos</string>
-    <string name="campos">Campos</string>
-    <string name="contenido_proximo">Aquí puedes ver el próximo partido...</string>
-    <string name="contenido_mi_equipo">Aquí puedes ver tu equipo favorito...</string>
-    <string name="contenido_partidos">Lista de partidos...</string>
-    <string name="contenido_jugadores">Lista de jugadores...</string>
-    <string name="contenido_alineaciones">Alineaciones de los equipos...</string>
-    <string name="contenido_estadisticas">Estadísticas detalladas...</string>
-    <string name="contenido_record">Récord histórico...</string>
-    <string name="contenido_elementos">Elementos y equipamiento...</string>
-    <string name="contenido_campos">Información de campos...</string>
+    <string name="abrir_menu_navegacion">Abrir menú de navegación</string>
+
+    <!-- Títulos para Navigation Items (asegúrate que no estén duplicados) -->
+    <!-- NUEVA string para la pantalla principal -->
+    <string name="nav_principal">Principal</string>
+
+    <string name="nav_proximo">Próximo Partido</string>
+    <string name="nav_mi_equipo">Mi Equipo</string>
+    <string name="nav_partidos">Partidos</string>
+    <string name="nav_jugadores">Jugadores</string>
+    <string name="nav_alineaciones">Alineaciones</string>
+    <string name="nav_estadisticas">Estadísticas</string>
+    <string name="nav_record">Historial</string>
+    <string name="nav_elementos">Elementos Adicionales</string>
+    <string name="nav_campos">Campos de Juego</string>
+
+    <!-- Contenido para cada sección -->
+    <!-- NUEVAS strings para la pantalla principal -->
+    <string name="titulo_principal_screen">Pantalla Principal</string>
+    <string name="descripcion_principal_screen">Aquí se mostrarán los datos generales recogidos y un resumen de la información más relevante de la aplicación.</string>
+
+    <!-- Estas strings también deberían estar ya si seguiste ejemplos anteriores -->
+    <string name="contenido_proximo">Próximo Partido</string>
+    <string name="contenido_mi_equipo">Mi Equipo</string>
+    <string name="contenido_partidos">Partidos</string>
+    <string name="contenido_jugadores">Jugadores</string>
+    <string name="contenido_alineaciones">Alineaciones</string>
+    <string name="contenido_estadisticas">Estadísticas</string>
+    <string name="contenido_record">Historial</string>
+    <string name="contenido_elementos">Elementos Adicionales</string>
+    <string name="contenido_campos">Campos de Juego</string>
 </resources>
