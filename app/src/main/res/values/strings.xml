@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">FutbolApp</string>
+    <string name="proximo_partido">Próximo Partido</string>
+    <string name="mi_equipo">Mi Equipo</string>
+    <string name="partidos">Partidos</string>
+    <string name="jugadores">Jugadores</string>
+    <string name="alineaciones">Alineaciones</string>
+    <string name="estadisticas">Estadísticas</string>
+    <string name="record">Récord</string>
+    <string name="elementos">Elementos</string>
+    <string name="campos">Campos</string>
+    <string name="contenido_proximo">Aquí puedes ver el próximo partido...</string>
+    <string name="contenido_mi_equipo">Aquí puedes ver tu equipo favorito...</string>
+    <string name="contenido_partidos">Lista de partidos...</string>
+    <string name="contenido_jugadores">Lista de jugadores...</string>
+    <string name="contenido_alineaciones">Alineaciones de los equipos...</string>
+    <string name="contenido_estadisticas">Estadísticas detalladas...</string>
+    <string name="contenido_record">Récord histórico...</string>
+    <string name="contenido_elementos">Elementos y equipamiento...</string>
+    <string name="contenido_campos">Información de campos...</string>
+</resources>

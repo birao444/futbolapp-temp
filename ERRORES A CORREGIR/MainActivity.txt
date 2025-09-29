@@ -1,0 +1,6 @@
+Archivo: MainActivity.kt
+Fecha: 29/09/2025
+
+No se han encontrado errores de compilación ni advertencias en este archivo.
+
+Si se detectan errores en el futuro, se irán anotando aquí con detalles y sugerencias de corrección.
