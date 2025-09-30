@@ -414,6 +414,7 @@ fun EditRoleDialog(
 
 fun getRoleIcon(role: UserRole): ImageVector {
     return when (role) {
+        UserRole.ADMIN_ENTRENADOR -> Icons.Default.AdminPanelSettings
         UserRole.ENTRENADOR -> Icons.Default.Star
         UserRole.SEGUNDO -> Icons.Default.Person
         UserRole.JUGADOR -> Icons.Default.Group

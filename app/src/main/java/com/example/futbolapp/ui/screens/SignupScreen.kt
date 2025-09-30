@@ -1,11 +1,13 @@
 package com.example.futbolapp.ui.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,8 +23,9 @@ fun SignupScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    val isLoading by authViewModel.isLoading.collectAsState()
-    val error by authViewModel.error.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -73,27 +76,27 @@ fun SignupScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (error != null) {
-            Text(error!!, color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
         Button(
             onClick = {
                 if (password == confirmPassword) {
-                    authViewModel.signUpWithEmailPassword(
+                    isLoading = true
+                    authViewModel.signUp(
                         email = email,
-                        password = password,
+                        pass = password,
                         name = name,
                         onSuccess = {
+                            isLoading = false
+                            Log.d("SignupScreen", "Registro exitoso")
                             onSignupSuccess()
                         },
                         onError = { errorMessage ->
+                            isLoading = false
+                            Toast.makeText(context, "Error registro: $errorMessage", Toast.LENGTH_LONG).show()
                             Log.e("SignupScreen", "Error al registrarse: $errorMessage")
                         }
                     )
                 } else {
-                    authViewModel.setError("Las contraseñas no coinciden")
+                    Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_LONG).show()
                 }
             },
             enabled = !isLoading && name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank(),

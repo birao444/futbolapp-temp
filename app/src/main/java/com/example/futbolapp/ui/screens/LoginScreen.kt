@@ -1,11 +1,13 @@
 package com.example.futbolapp.ui.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,8 +21,9 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val isLoading by authViewModel.isLoading.collectAsState()
-    val error by authViewModel.error.collectAsState()
+    var isLoading by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -52,21 +55,20 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (error != null) {
-            Text(error!!, color = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
         Button(
             onClick = {
-                authViewModel.signInWithEmailPassword(
+                isLoading = true
+                authViewModel.signIn(
                     email = email,
-                    password = password,
+                    pass = password,
                     onSuccess = {
+                        isLoading = false
+                        Log.d("LoginScreen", "Inicio de sesión exitoso")
                         onLoginSuccess()
                     },
                     onError = { errorMessage ->
-                        // Aquí podrías mostrar el error, por ejemplo actualizando un estado de error
+                        isLoading = false
+                        Toast.makeText(context, "Error inicio sesión: $errorMessage", Toast.LENGTH_LONG).show()
                         Log.e("LoginScreen", "Error al iniciar sesión: $errorMessage")
                     }
                 )

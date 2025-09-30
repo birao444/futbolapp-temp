@@ -1,6 +1,22 @@
 package com.example.futbolapp.models
 
 enum class UserRole(val displayName: String, val permissions: List<Permission>) {
+    ADMIN_ENTRENADOR(
+        "Admin Entrenador",
+        listOf(
+            Permission.MANAGE_TEAM,
+            Permission.MANAGE_PLAYERS,
+            Permission.MANAGE_LINEUPS,
+            Permission.MANAGE_MATCHES,
+            Permission.VIEW_STATISTICS,
+            Permission.MANAGE_ROLES,
+            Permission.MANAGE_FIELDS,
+            Permission.MANAGE_IMPROVEMENTS,
+            Permission.ADMIN_ACCESS,
+            Permission.DELETE_DATA,
+            Permission.MANAGE_USERS
+        )
+    ),
     ENTRENADOR(
         "Entrenador",
         listOf(
@@ -66,7 +82,10 @@ enum class Permission {
     VIEW_LINEUPS,          // Solo ver alineaciones
     VIEW_MATCHES,          // Solo ver partidos
     VIEW_PLAYERS,          // Solo ver jugadores
-    MANAGE_PLAYER_HEALTH   // Gestionar estado físico de jugadores
+    MANAGE_PLAYER_HEALTH,  // Gestionar estado físico de jugadores
+    ADMIN_ACCESS,          // Acceso administrativo completo
+    DELETE_DATA,           // Eliminar datos permanentemente
+    MANAGE_USERS           // Gestionar usuarios del sistema
 }
 
 data class TeamMember(

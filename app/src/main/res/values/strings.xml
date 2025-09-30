@@ -7,7 +7,7 @@
     <!-- NUEVA string para la pantalla principal -->
     <string name="nav_principal">Principal</string>
 
-    <string name="nav_proximo">Próximo Partido</string>
+    <string name="nav_proximo_partido">Próximo Partido</string>
     <string name="nav_mi_equipo">Mi Equipo</string>
     <string name="nav_partidos">Partidos</string>
     <string name="nav_jugadores">Jugadores</string>

@@ -8,7 +8,7 @@
 - [x] Create data models: User, Team, Match, Player, Lineup, Statistics, Field, Improvement, Role, UserRole
 - [x] Create AuthRepository.kt
 - [x] Create TeamRepository.kt
-- [x] Create AuthViewModel.kt
+- [x] Create AuthViewModel.kt with automatic user profile creation in Firestore
 - [x] Create TeamViewModel.kt
 - [x] Create RoleViewModel.kt for role management
 - [x] Create RoleManager.kt for role assignment logic
@@ -26,6 +26,16 @@
 - [x] Create StatisticsRepository
 - [x] Create FieldRepository
 - [x] Create ImprovementRepository
+- [x] Install Node.js
+- [x] Install Firebase CLI
+- [x] Login to Firebase CLI
+- [x] Create Firebase project (futbolapp-project)
+- [x] Initialize Firebase Functions (JavaScript)
+- [x] Implement automatic user profile creation in AuthViewModel (free alternative to Firebase Functions)
+- [x] Implement role-based navigation system with filtered menu items
+- [x] Create role-specific screen content (Principal, Próximo Partido, Mi Equipo, Ajustes)
+- [x] Add role display in navigation drawer
+- [x] Implement permission-based content visibility
 
 ## Pending Tasks
 - [ ] Add google-services.json to app/ directory (required for Firebase)
@@ -42,3 +52,21 @@
 - [ ] Correlate entities (e.g., lineups with matches, stats with players, improvements with team)
 - [ ] Test real-time synchronization
 - [ ] Build and test the app
+
+## Next Steps for Firebase Setup
+1. Download google-services.json from Firebase Console and place in app/ directory
+2. Enable Authentication (Email/Password) in Firebase Console
+3. Enable Firestore Database in Firebase Console
+4. Set up Firestore Security Rules (optional for development)
+
+## Firebase CLI Installation Instructions
+Since automatic installation failed, please install Firebase CLI manually:
+1. Open Command Prompt or PowerShell as Administrator
+2. Run: npm install -g firebase-tools
+3. If npm is not in PATH, use: "C:\Program Files\nodejs\npm.cmd" install -g firebase-tools
+4. After installation, create Firebase project:
+   - firebase login
+   - firebase projects:create futbolapp-project
+   - firebase use --add
+   - Enable Authentication and Firestore in Firebase Console
+   - Download google-services.json and place in app/ directory
