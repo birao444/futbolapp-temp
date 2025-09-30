@@ -93,7 +93,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            FutbolAppTheme {
+            val themeViewModel: com.example.futbolapp.viewmodels.ThemeViewModel = viewModel()
+            val themeMode by themeViewModel.themeMode.collectAsState()
+            val darkTheme = when (themeMode) {
+                com.example.futbolapp.viewmodels.ThemeMode.LIGHT -> false
+                com.example.futbolapp.viewmodels.ThemeMode.DARK -> true
+                com.example.futbolapp.viewmodels.ThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+            
+            FutbolAppTheme(darkTheme = darkTheme) {
                 AppContent()
             }
         }
@@ -268,14 +276,19 @@ fun PrincipalScreen() {
 
 // --- NUEVA Pantalla de Ajustes ---
 @Composable
-fun AjustesScreen(authViewModel: AuthViewModel = viewModel()) {
+fun AjustesScreen(
+    authViewModel: AuthViewModel = viewModel(),
+    themeViewModel: com.example.futbolapp.viewmodels.ThemeViewModel = viewModel()
+) {
     var showLogoutDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val currentThemeMode by themeViewModel.themeMode.collectAsState()
+    var expanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.Start
     ) {
         Text(
             text = stringResource(R.string.titulo_ajustes_screen),
@@ -287,6 +300,64 @@ fun AjustesScreen(authViewModel: AuthViewModel = viewModel()) {
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(bottom = 24.dp)
         )
+
+        // Sección de Tema
+        Text(
+            text = "Tema de la aplicación",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        // Dropdown para seleccionar tema
+        androidx.compose.material3.ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
+        ) {
+            androidx.compose.material3.OutlinedTextField(
+                value = when (currentThemeMode) {
+                    com.example.futbolapp.viewmodels.ThemeMode.LIGHT -> "Claro"
+                    com.example.futbolapp.viewmodels.ThemeMode.DARK -> "Oscuro"
+                    com.example.futbolapp.viewmodels.ThemeMode.SYSTEM -> "Según el sistema"
+                },
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Seleccionar tema") },
+                trailingIcon = {
+                    androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                },
+                modifier = Modifier.menuAnchor().fillMaxWidth()
+            )
+
+            androidx.compose.material3.ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text("Claro") },
+                    onClick = {
+                        themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.LIGHT)
+                        expanded = false
+                    }
+                )
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text("Oscuro") },
+                    onClick = {
+                        themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.DARK)
+                        expanded = false
+                    }
+                )
+                androidx.compose.material3.DropdownMenuItem(
+                    text = { Text("Según el sistema") },
+                    onClick = {
+                        themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.SYSTEM)
+                        expanded = false
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
 
         // Botón de Cerrar Sesión
         androidx.compose.material3.Button(
