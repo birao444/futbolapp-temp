@@ -106,6 +106,11 @@ fun AppContent(authViewModel: AuthViewModel = viewModel(), teamViewModel: TeamVi
     val currentUser = authViewModel.currentUser
     var isLoggedIn by remember { mutableStateOf(currentUser != null) }
 
+    // Observe authentication state changes
+    LaunchedEffect(currentUser) {
+        isLoggedIn = currentUser != null
+    }
+
     if (!isLoggedIn) {
         LoginScreen(onLoginSuccess = { isLoggedIn = true })
         return
@@ -263,10 +268,13 @@ fun PrincipalScreen() {
 
 // --- NUEVA Pantalla de Ajustes ---
 @Composable
-fun AjustesScreen() {
+fun AjustesScreen(authViewModel: AuthViewModel = viewModel()) {
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Top, // o Arrangement.Center si prefieres
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -276,12 +284,48 @@ fun AjustesScreen() {
         )
         Text(
             text = stringResource(R.string.descripcion_ajustes_screen),
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(bottom = 24.dp)
         )
-        // Aquí añadirás las opciones de configuración de tu app
-        // Ejemplos:
-        // Switch(checked = ..., onCheckedChange = ...)
-        // Button(onClick = ...) { Text("Vaciar caché") }
+
+        // Botón de Cerrar Sesión
+        androidx.compose.material3.Button(
+            onClick = { showLogoutDialog = true },
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Text("Cerrar Sesión", color = MaterialTheme.colorScheme.onError)
+        }
+    }
+
+    // Diálogo de confirmación
+    if (showLogoutDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Cerrar Sesión") },
+            text = { Text("¿Estás seguro de que quieres cerrar sesión?") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        scope.launch {
+                            authViewModel.signOut()
+                            showLogoutDialog = false
+                        }
+                    }
+                ) {
+                    Text("Sí, cerrar sesión")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showLogoutDialog = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
