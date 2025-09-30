@@ -141,4 +141,13 @@ class FirebaseFirestoreManager {
             onUpdate(snapshot?.data)
         }
     }
+
+    fun listenToTeamsForUser(userId: String, onUpdate: (List<Map<String, Any>>) -> Unit): ListenerRegistration {
+        val query = teamsCollection.whereEqualTo("userId", userId)
+        return query.addSnapshotListener { snapshot, e ->
+            if (e != null) return@addSnapshotListener
+            val teams = snapshot?.documents?.mapNotNull { it.data } ?: emptyList()
+            onUpdate(teams)
+        }
+    }
 }

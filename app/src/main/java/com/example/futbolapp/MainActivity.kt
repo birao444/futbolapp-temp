@@ -39,6 +39,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import com.example.futbolapp.ui.theme.FutbolAppTheme
 import com.example.futbolapp.ui.LoginScreen
 import com.example.futbolapp.viewmodels.AuthViewModel
+import com.example.futbolapp.viewmodels.TeamViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
@@ -99,13 +102,20 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppContent(authViewModel: AuthViewModel = viewModel()) {
+fun AppContent(authViewModel: AuthViewModel = viewModel(), teamViewModel: TeamViewModel = viewModel()) {
     val currentUser = authViewModel.currentUser
     var isLoggedIn by remember { mutableStateOf(currentUser != null) }
 
     if (!isLoggedIn) {
         LoginScreen(onLoginSuccess = { isLoggedIn = true })
         return
+    }
+
+    // Start real-time listening for teams when logged in
+    LaunchedEffect(currentUser?.uid) {
+        currentUser?.uid?.let { userId ->
+            teamViewModel.startListeningToTeamsForUser(userId)
+        }
     }
 
     var selectedItem by remember { mutableStateOf<NavItem?>(navigationItemsList.firstOrNull { it.id == "principal" }) }
@@ -281,64 +291,74 @@ fun AjustesScreen() {
 fun ProximoPartidoScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.contenido_proximo), style = MaterialTheme.typography.headlineSmall)
-        Text("Esta pantalla mostrará detalles del próximo partido.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        Text(stringResource(R.string.desc_proximo), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
     }
 }
 
 @Composable
-fun MiEquipoScreen() {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.contenido_mi_equipo), style = MaterialTheme.typography.headlineSmall)
-        Text("Aquí podrás ver y gestionar la información de tu equipo.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+fun MiEquipoScreen(teamViewModel: TeamViewModel = viewModel()) {
+    val teams by teamViewModel.teams.collectAsState()
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.Start) {
+        Text(stringResource(R.string.contenido_mi_equipo), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+
+        if (teams.isEmpty()) {
+            Text("No tienes equipos registrados.", style = MaterialTheme.typography.bodyMedium)
+        } else {
+            teams.forEach { team ->
+                Text("Equipo: ${team.name}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 8.dp))
+                Text("Descripción: ${team.description}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 16.dp))
+            }
+        }
     }
 }
 @Composable
 fun PartidosScreen() {
      Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.contenido_partidos), style = MaterialTheme.typography.headlineSmall)
-         Text("Listado de partidos jugados y futuros.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+         Text(stringResource(R.string.desc_partidos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
     }
 }
 @Composable
 fun JugadoresScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.contenido_jugadores), style = MaterialTheme.typography.headlineSmall)
-        Text("Información y estadísticas de los jugadores.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        Text(stringResource(R.string.desc_jugadores), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
     }
 }
 @Composable
 fun AlineacionesScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.contenido_alineaciones), style = MaterialTheme.typography.headlineSmall)
-        Text("Visualiza y crea alineaciones.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        Text(stringResource(R.string.desc_alineaciones), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
     }
 }
 @Composable
 fun EstadisticasScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.contenido_estadisticas), style = MaterialTheme.typography.headlineSmall)
-        Text("Estadísticas generales del torneo o equipo.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        Text(stringResource(R.string.desc_estadisticas), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
     }
 }
 @Composable
 fun RecordScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.contenido_record), style = MaterialTheme.typography.headlineSmall)
-        Text("Historial y récords destacados.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        Text(stringResource(R.string.desc_record), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
     }
 }
 @Composable
 fun ElementosScreen() { // Este es el que tenías como "Elementos Adicionales"
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.nav_elementos), style = MaterialTheme.typography.headlineSmall) // Usando el string de nav_elementos
-        Text("Configuración de elementos adicionales.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        Text(stringResource(R.string.desc_elementos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
     }
 }
 @Composable
 fun CamposScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(stringResource(R.string.contenido_campos), style = MaterialTheme.typography.headlineSmall)
-        Text("Información sobre los campos de juego.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        Text(stringResource(R.string.desc_campos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
     }
 }
 

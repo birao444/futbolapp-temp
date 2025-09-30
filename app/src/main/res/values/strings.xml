@@ -26,6 +26,17 @@
     <string name="titulo_ajustes_screen">Configuración</string>
     <string name="descripcion_ajustes_screen">Aquí podrás configurar las preferencias de la aplicación.</string>
 
+    <!-- Descripciones de pantallas -->
+    <string name="desc_proximo">Esta pantalla mostrará detalles del próximo partido.</string>
+    <string name="desc_mi_equipo">Aquí podrás ver y gestionar la información de tu equipo.</string>
+    <string name="desc_partidos">Listado de partidos jugados y futuros.</string>
+    <string name="desc_jugadores">Información y estadísticas de los jugadores.</string>
+    <string name="desc_alineaciones">Visualiza y crea alineaciones.</string>
+    <string name="desc_estadisticas">Estadísticas generales del torneo o equipo.</string>
+    <string name="desc_record">Historial y récords destacados.</string>
+    <string name="desc_elementos">Configuración de elementos adicionales.</string>
+    <string name="desc_campos">Información sobre los campos de juego.</string>
+
     <!-- Estas strings también deberían estar ya si seguiste ejemplos anteriores -->
     <string name="contenido_proximo">Próximo Partido</string>
     <string name="contenido_mi_equipo">Mi Equipo</string>
