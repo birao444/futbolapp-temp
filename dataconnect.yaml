@@ -1,0 +1,10 @@
+# Firebase Data Connect configuration
+# This project uses Firestore instead of Data Connect
+# This file is present to suppress VSCode extension warnings
+
+specVersion: "v1alpha"
+serviceId: "futbolapp"
+location: "europe-west1"
+schema:
+  sources: []
+connectorDirs: []
