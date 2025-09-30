@@ -1,84 +1,101 @@
-package com.example.futbolapp.viewmodels
+package com.example.futbolapp // Asegúrate que el package sea el correcto
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.futbolapp.firebase.FirebaseAuthManager
-import com.example.futbolapp.firebase.FirebaseFirestoreManager
+import androidx.lifecycle.viewModelScope // Necesario para viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow // Necesario para asStateFlow
 import kotlinx.coroutines.launch
 
-sealed class AuthState {
-    object Idle : AuthState()
-    object Loading : AuthState()
-    data class Success(val userId: String) : AuthState()
-    data class Error(val message: String) : AuthState()
-}
+class AuthViewModel : ViewModel() {
 
-class AuthViewModel(
-    private val authManager: FirebaseAuthManager = FirebaseAuthManager(),
-    private val firestoreManager: FirebaseFirestoreManager = FirebaseFirestoreManager()
-) : ViewModel() {
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
-    val authState: StateFlow<AuthState> = _authState
+    // _currentUser se inicializa con el estado actual al crear el ViewModel.
+    // El AuthStateListener lo mantendrá actualizado.
+    private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
+    val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
 
+    // Estados para UI
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
-    val currentUser = authManager.currentUser
-
-    fun signIn(email: String, password: String, onSuccess: () -> Unit = {}) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val user = authManager.signIn(email, password)
-                if (user != null) {
-                    onSuccess()
-                } else {
-                    _error.value = "Error al iniciar sesión"
-                }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Error al iniciar sesión"
-            } finally {
-                _isLoading.value = false
-            }
+    // El listener que reacciona a los cambios de estado de autenticación
+    private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+        val user = firebaseAuth.currentUser
+        if (_currentUser.value?.uid != user?.uid) { // Solo actualiza si realmente cambió
+            _currentUser.value = user
+            Log.d("AuthViewModel", "AuthStateListener: Usuario cambiado a: ${user?.uid ?: "null"}")
         }
     }
 
-    fun signUp(email: String, password: String, name: String, onSuccess: () -> Unit = {}) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            try {
-                val user = authManager.signUp(email, password)
-                if (user != null) {
-                    // Create user data in Firestore
-                    val userData = mapOf(
-                        "id" to user.uid,
-                        "email" to email,
-                        "name" to name,
-                        "role" to "jugador"
-                    )
-                    firestoreManager.createOrUpdateUserData(user.uid, userData)
-                    onSuccess()
-                } else {
-                    _error.value = "Error al registrarse"
-                }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Error al registrarse"
-            } finally {
-                _isLoading.value = false
-            }
-        }
+    init {
+        auth.addAuthStateListener(authStateListener)
+        Log.d("AuthViewModel", "AuthViewModel inicializado. Usuario actual: ${_currentUser.value?.uid ?: "null"}")
     }
 
     fun signOut() {
-        authManager.signOut()
+        Log.d("AuthViewModel", "signOut() llamado.")
+        viewModelScope.launch {
+            auth.signOut()
+            // El AuthStateListener se encargará de actualizar _currentUser.value a null.
+            // No es estrictamente necesario asignar null aquí, pero no hace daño si quieres ser explícito
+            // _currentUser.value = null
+            Log.d("AuthViewModel", "Firebase auth.signOut() ejecutado.")
+        }
+    }
+
+    fun signInWithEmailPassword(email: String, password: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            try {
+                auth.signInWithEmailAndPassword(email, password).await()
+                // El AuthStateListener actualizará currentUser, lo que activará la navegación en AppContent
+                onSuccess() // Llama a onSuccess para cualquier lógica adicional post-login en la UI
+                Log.d("AuthViewModel", "signInWithEmailPassword exitoso.")
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error en signInWithEmailPassword: ${e.message}", e)
+                val errorMessage = e.message ?: "Error desconocido al iniciar sesión"
+                _error.value = errorMessage
+                onError(errorMessage)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun signUpWithEmailPassword(email: String, password: String, name: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            try {
+                val result = auth.createUserWithEmailAndPassword(email, password).await()
+                val user = result.user
+                if (user != null) {
+                    // Aquí podrías guardar datos adicionales del usuario en Firestore
+                    Log.d("AuthViewModel", "signUpWithEmailPassword exitoso para ${user.uid}")
+                    onSuccess()
+                } else {
+                    val errorMessage = "Error al crear la cuenta"
+                    _error.value = errorMessage
+                    onError(errorMessage)
+                }
+            } catch (e: Exception) {
+                Log.e("AuthViewModel", "Error en signUpWithEmailPassword: ${e.message}", e)
+                val errorMessage = e.message ?: "Error desconocido al registrarse"
+                _error.value = errorMessage
+                onError(errorMessage)
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun setError(error: String) {
@@ -87,5 +104,12 @@ class AuthViewModel(
 
     fun clearError() {
         _error.value = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Es crucial remover el listener para evitar memory leaks y comportamiento inesperado
+        auth.removeAuthStateListener(authStateListener)
+        Log.d("AuthViewModel", "AuthViewModel onCleared y AuthStateListener removido.")
     }
 }

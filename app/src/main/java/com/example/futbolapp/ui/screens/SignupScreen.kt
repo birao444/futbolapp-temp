@@ -1,5 +1,6 @@
 package com.example.futbolapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -80,9 +81,17 @@ fun SignupScreen(
         Button(
             onClick = {
                 if (password == confirmPassword) {
-                    authViewModel.signUp(email, password, name, onSuccess = {
-                        onSignupSuccess()
-                    })
+                    authViewModel.signUpWithEmailPassword(
+                        email = email,
+                        password = password,
+                        name = name,
+                        onSuccess = {
+                            onSignupSuccess()
+                        },
+                        onError = { errorMessage ->
+                            Log.e("SignupScreen", "Error al registrarse: $errorMessage")
+                        }
+                    )
                 } else {
                     authViewModel.setError("Las contraseñas no coinciden")
                 }

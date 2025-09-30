@@ -1,6 +1,7 @@
 package com.example.futbolapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.futbolapp.ui.screens.LoginScreen
 import com.example.futbolapp.ui.screens.SignupScreen
@@ -84,72 +86,78 @@ fun AppContent(
     teamViewModel: TeamViewModel = viewModel(),
     roleViewModel: RoleViewModel = viewModel()
 ) {
-    val currentUser = authViewModel.currentUser
-    var isLoggedIn by remember { mutableStateOf(currentUser != null) }
-    var showSignup by remember { mutableStateOf(false) }
+    // Observa currentUser del AuthViewModel.
+    // collectAsStateWithLifecycle es la forma moderna y recomendada de observar un StateFlow desde Compose. Reacciona a los cambios de currentUser de manera eficiente y respetando el ciclo de vida.
+    val currentUser by authViewModel.currentUser.collectAsStateWithLifecycle()
 
-    // Estado del rol del usuario
-    val currentUserRole by roleViewModel.currentUserRole.collectAsState()
-    var currentTeamId by remember { mutableStateOf<String?>(null) }
+    // Determina si el usuario está logueado basándose en currentUser.
+    // Esta será la única fuente de verdad para el estado de login.
+    val isLoggedIn = currentUser != null
 
-    // Observe authentication state changes
-    LaunchedEffect(currentUser) {
-        isLoggedIn = currentUser != null
-    }
+    Log.d("AppContent", "Recomponiendo AppContent. Usuario actual: ${currentUser?.uid ?: "null"}, isLoggedIn: $isLoggedIn")
 
     if (!isLoggedIn) {
-        if (showSignup) {
-            SignupScreen(
-                onSignupSuccess = { isLoggedIn = true },
-                onNavigateToLogin = { showSignup = false }
-            )
-        } else {
-            LoginScreen(
-                onLoginSuccess = { isLoggedIn = true },
-                onNavigateToSignup = { showSignup = true }
-            )
-        }
-        return
-    }
+        Log.d("AppContent", "Usuario NO logueado. Mostrando LoginScreen.")
+        LoginScreen(
+            onLoginSuccess = {
+                // Esta lambda se llama DESDE LoginScreen después de un intento de login exitoso.
+                // En este punto, el AuthStateListener en AuthViewModel ya debería haber
+                // actualizado currentUser, y AppContent se recompondrá mostrando el contenido principal.
+                // No necesitas hacer nada más aquí para cambiar el estado de login.
+                Log.d("AppContent", "LoginScreen reportó onLoginSuccess.")
+            },
+            onNavigateToSignup = { /* TODO: Implementar navegación a signup */ }
+        )
+        // Importante: No renderizar el resto si no está logueado.
+        // El 'return' no es estrictamente necesario aquí si el if/else cubre toda la lógica,
+        // pero es una buena práctica para la claridad si la estructura se vuelve más compleja.
+    } else {
+        // Usuario SÍ está logueado, muestra el contenido principal de la app.
+        Log.d("AppContent", "Usuario SÍ logueado (${currentUser?.uid}). Mostrando contenido principal.")
 
-    // Start real-time listening for teams when logged in
-    LaunchedEffect(currentUser?.uid) {
-        currentUser?.uid?.let { userId ->
-            teamViewModel.startListeningToTeamsForUser(userId)
-        }
-    }
-    
-    // Obtener el primer equipo del usuario (puedes mejorar esto para seleccionar equipo)
-    val teams by teamViewModel.teams.collectAsState()
-    LaunchedEffect(teams) {
-        if (teams.isNotEmpty() && currentTeamId == null) {
-            currentTeamId = teams.first().id
-        }
-    }
-    
-    // Cargar rol del usuario cuando tengamos el teamId
-    LaunchedEffect(currentUser?.uid, currentTeamId) {
-        if (currentUser?.uid != null && currentTeamId != null) {
-            roleViewModel.loadCurrentUserRole(currentUser.uid, currentTeamId!!)
-        }
-    }
+        // Estado del rol del usuario
+        val currentUserRole by roleViewModel.currentUserRole.collectAsState()
+        var currentTeamId by remember { mutableStateOf<String?>(null) }
 
-    // Obtener items de navegación según el rol
-    val navigationItems = remember(currentUserRole) {
-        RoleBasedNavigation.getNavigationItemsForRole(currentUserRole)
-    }
-    
-    // Pantalla inicial según el rol
-    val defaultScreen = remember(currentUserRole) {
-        RoleBasedNavigation.getDefaultScreenForRole(currentUserRole)
-    }
-    
-    var selectedItem by remember(defaultScreen) {
-        mutableStateOf<NavItem?>(navigationItems.firstOrNull { it.id == defaultScreen })
-    }
-    
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
+        // Start real-time listening for teams when logged in
+        LaunchedEffect(currentUser?.uid) {
+            currentUser?.uid?.let { userId ->
+                teamViewModel.startListeningToTeamsForUser(userId)
+            }
+        }
+
+        // Obtener el primer equipo del usuario (puedes mejorar esto para seleccionar equipo)
+        val teams by teamViewModel.teams.collectAsState()
+        LaunchedEffect(teams) {
+            if (teams.isNotEmpty() && currentTeamId == null) {
+                currentTeamId = teams.first().id
+            }
+        }
+
+        // Cargar rol del usuario cuando tengamos el teamId
+        LaunchedEffect(currentUser?.uid, currentTeamId) {
+            if (currentUser?.uid != null && currentTeamId != null) {
+                roleViewModel.loadCurrentUserRole(currentUser.uid, currentTeamId!!)
+            }
+        }
+
+        // Obtener items de navegación según el rol
+        val navigationItems = remember(currentUserRole) {
+            RoleBasedNavigation.getNavigationItemsForRole(currentUserRole)
+        }
+
+        // Pantalla inicial según el rol
+        val defaultScreen = remember(currentUserRole) {
+            RoleBasedNavigation.getDefaultScreenForRole(currentUserRole)
+        }
+
+        // Estado para el ítem seleccionado en el Navigation Drawer.
+        // Se reinicia a "principal" si el currentUser cambia (ej. nuevo login).
+        var selectedItem by remember(currentUser) {
+            mutableStateOf<NavItem?>(navigationItems.firstOrNull { it.id == defaultScreen })
+        }
+        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+        val scope = rememberCoroutineScope()
 
     ModalNavigationDrawer(
         drawerState = drawerState,

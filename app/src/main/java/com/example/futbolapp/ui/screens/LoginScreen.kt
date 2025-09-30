@@ -1,5 +1,6 @@
 package com.example.futbolapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -58,9 +59,17 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                authViewModel.signIn(email, password, onSuccess = {
-                    onLoginSuccess()
-                })
+                authViewModel.signInWithEmailPassword(
+                    email = email,
+                    password = password,
+                    onSuccess = {
+                        onLoginSuccess()
+                    },
+                    onError = { errorMessage ->
+                        // Aquí podrías mostrar el error, por ejemplo actualizando un estado de error
+                        Log.e("LoginScreen", "Error al iniciar sesión: $errorMessage")
+                    }
+                )
             },
             enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
             modifier = Modifier.fillMaxWidth()
