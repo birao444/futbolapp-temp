@@ -52,6 +52,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.futbolapp.ui.theme.FutbolAppTheme
+import com.example.futbolapp.ui.LoginScreen
+import com.example.futbolapp.viewmodels.AuthViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
 // Define tu NavItem data class
@@ -96,7 +99,15 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppContent() {
+fun AppContent(authViewModel: AuthViewModel = viewModel()) {
+    val currentUser = authViewModel.currentUser
+    var isLoggedIn by remember { mutableStateOf(currentUser != null) }
+
+    if (!isLoggedIn) {
+        LoginScreen(onLoginSuccess = { isLoggedIn = true })
+        return
+    }
+
     var selectedItem by remember { mutableStateOf<NavItem?>(navigationItemsList.firstOrNull { it.id == "principal" }) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()

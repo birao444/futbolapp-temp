@@ -1,19 +1,27 @@
-# TODO List for Restructuring App with Main Screen
+# TODO List for FutbolApp Firebase Integration and Features
 
-- [x] Add navigation-compose dependency to app/build.gradle.kts
-- [x] Create ui/screens package directory
-- [x] Create ProximoPartidoScreen.kt composable
-- [x] Create MiEquipoScreen.kt composable
-- [x] Create PartidosScreen.kt composable
-- [x] Create JugadoresScreen.kt composable
-- [x] Create AlineacionesScreen.kt composable
-- [x] Create EstadisticasScreen.kt composable
-- [x] Create RecordScreen.kt composable
-- [x] Create ElementosScreen.kt composable
-- [x] Create CamposScreen.kt composable
-- [x] Modify MainActivity.kt to set up NavController and NavHost
-- [x] Modify DrawerContent.kt to use NavController for navigation
-- [x] Build the project to check for errors
-- [x] Restructure app: integrate all into MainActivity.kt, add PrincipalScreen, update strings.xml
-- [x] Delete old DrawerContent.kt and screens directory
-- [x] Commit and push changes
+- [x] Add Firebase dependencies to app/build.gradle.kts
+- [x] Create FirebaseAuthManager.kt
+- [x] Create FirebaseFirestoreManager.kt
+- [x] Create data models: User, Team, Match, Player, Lineup, Statistics, Field, Improvement
+- [x] Create AuthRepository.kt
+- [x] Create TeamRepository.kt
+- [x] Create AuthViewModel.kt
+- [x] Create TeamViewModel.kt
+- [ ] Add google-services.json to app/
+- [x] Create LoginScreen composable
+- [x] Update MainActivity to check auth and show login if needed
+- [ ] Create remaining repositories: MatchRepository, PlayerRepository, LineupRepository, StatisticsRepository, FieldRepository, ImprovementRepository
+- [ ] Create remaining ViewModels: MatchViewModel, PlayerViewModel, etc.
+- [ ] Update MiEquipoScreen to use TeamViewModel for creating/editing team and improvements
+- [ ] Update ProximoPartidoScreen to show upcoming matches using MatchViewModel
+- [ ] Update PartidosScreen to list all matches
+- [ ] Update JugadoresScreen to manage players
+- [ ] Update AlineacionesScreen to create/edit lineups
+- [ ] Update EstadisticasScreen to show stats
+- [ ] Update CamposScreen to manage fields
+- [ ] Implement roles-based UI restrictions (coach full access, assistant, players, physio, coordinator)
+- [ ] Add CRUD operations for all entities
+- [ ] Correlate entities (e.g., lineups with matches, stats with players, improvements with team)
+- [ ] Test real-time synchronization
+- [ ] Build and test the app
