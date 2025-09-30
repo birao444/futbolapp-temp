@@ -58,9 +58,9 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                authViewModel.signIn(email, password) {
+                authViewModel.signIn(email, password, onSuccess = {
                     onLoginSuccess()
-                }
+                })
             },
             enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
             modifier = Modifier.fillMaxWidth()

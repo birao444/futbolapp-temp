@@ -31,7 +31,7 @@ class AuthViewModel(
 
     val currentUser = authManager.currentUser
 
-    fun signIn(email: String, password: String, onSuccess: () -> Unit) {
+    fun signIn(email: String, password: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -50,7 +50,7 @@ class AuthViewModel(
         }
     }
 
-    fun signUp(email: String, password: String, name: String, onSuccess: () -> Unit) {
+    fun signUp(email: String, password: String, name: String, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null

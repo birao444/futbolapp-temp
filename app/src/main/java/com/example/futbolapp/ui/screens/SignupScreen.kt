@@ -80,9 +80,9 @@ fun SignupScreen(
         Button(
             onClick = {
                 if (password == confirmPassword) {
-                    authViewModel.signUp(email, password, name) {
+                    authViewModel.signUp(email, password, name, onSuccess = {
                         onSignupSuccess()
-                    }
+                    })
                 } else {
                     authViewModel.setError("Las contraseñas no coinciden")
                 }
