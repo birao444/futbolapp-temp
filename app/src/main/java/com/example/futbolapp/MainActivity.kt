@@ -275,6 +275,7 @@ fun PrincipalScreen() {
 }
 
 // --- NUEVA Pantalla de Ajustes ---
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AjustesScreen(
     authViewModel: AuthViewModel = viewModel(),
@@ -283,7 +284,6 @@ fun AjustesScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val currentThemeMode by themeViewModel.themeMode.collectAsState()
-    var expanded by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -305,55 +305,46 @@ fun AjustesScreen(
         Text(
             text = "Tema de la aplicación",
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Dropdown para seleccionar tema
-        androidx.compose.material3.ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
+        // Botones para seleccionar tema
+        androidx.compose.material3.Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
         ) {
-            androidx.compose.material3.OutlinedTextField(
-                value = when (currentThemeMode) {
-                    com.example.futbolapp.viewmodels.ThemeMode.LIGHT -> "Claro"
-                    com.example.futbolapp.viewmodels.ThemeMode.DARK -> "Oscuro"
-                    com.example.futbolapp.viewmodels.ThemeMode.SYSTEM -> "Según el sistema"
-                },
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Seleccionar tema") },
-                trailingIcon = {
-                    androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                },
-                modifier = Modifier.menuAnchor().fillMaxWidth()
-            )
-
-            androidx.compose.material3.ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Text("Claro") },
-                    onClick = {
-                        themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.LIGHT)
-                        expanded = false
-                    }
-                )
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Text("Oscuro") },
-                    onClick = {
-                        themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.DARK)
-                        expanded = false
-                    }
-                )
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Text("Según el sistema") },
-                    onClick = {
-                        themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.SYSTEM)
-                        expanded = false
-                    }
-                )
+            Column(modifier = Modifier.padding(16.dp)) {
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.RadioButton(
+                        selected = currentThemeMode == com.example.futbolapp.viewmodels.ThemeMode.LIGHT,
+                        onClick = { themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.LIGHT) }
+                    )
+                    Text("Claro", modifier = Modifier.padding(start = 8.dp))
+                }
+                
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.RadioButton(
+                        selected = currentThemeMode == com.example.futbolapp.viewmodels.ThemeMode.DARK,
+                        onClick = { themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.DARK) }
+                    )
+                    Text("Oscuro", modifier = Modifier.padding(start = 8.dp))
+                }
+                
+                androidx.compose.foundation.layout.Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.RadioButton(
+                        selected = currentThemeMode == com.example.futbolapp.viewmodels.ThemeMode.SYSTEM,
+                        onClick = { themeViewModel.setThemeMode(com.example.futbolapp.viewmodels.ThemeMode.SYSTEM) }
+                    )
+                    Text("Según el sistema", modifier = Modifier.padding(start = 8.dp))
+                }
             }
         }
 
