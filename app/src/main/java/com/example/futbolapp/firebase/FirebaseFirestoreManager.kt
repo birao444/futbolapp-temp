@@ -5,7 +5,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.tasks.await
 
 class FirebaseFirestoreManager {
-    private val db = FirebaseFirestore.getInstance()
+    val db = FirebaseFirestore.getInstance()
 
     // Collection references
     private val usersCollection = db.collection("users")

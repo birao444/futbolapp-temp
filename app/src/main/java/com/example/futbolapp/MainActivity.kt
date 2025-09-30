@@ -12,17 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AlignHorizontalLeft
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,45 +40,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.futbolapp.ui.screens.LoginScreen
+import com.example.futbolapp.ui.screens.SignupScreen
+import com.example.futbolapp.ui.screens.AIAssistantScreen
+import com.example.futbolapp.ui.screens.RoleManagementScreen
 import com.example.futbolapp.ui.theme.FutbolAppTheme
-import com.example.futbolapp.ui.LoginScreen
+import com.example.futbolapp.utils.NavItem
+import com.example.futbolapp.utils.RoleBasedNavigation
+import com.example.futbolapp.viewmodel.RoleViewModel
 import com.example.futbolapp.viewmodels.AuthViewModel
 import com.example.futbolapp.viewmodels.TeamViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-
-// Define tu NavItem data class
-data class NavItem(
-    val id: String,
-    val titleResId: Int,
-    val icon: ImageVector,
-    val isSettings: Boolean = false // Nuevo campo para identificar el item de Ajustes
-)
-
-// Lista de items de navegación
-val navigationItemsList = listOf(
-    NavItem(id = "principal", titleResId = R.string.nav_principal, icon = Icons.Filled.Home),
-    NavItem(id = "proximo", titleResId = R.string.nav_proximo, icon = Icons.Filled.CalendarToday),
-    NavItem(id = "mi_equipo", titleResId = R.string.nav_mi_equipo, icon = Icons.Filled.Group),
-    NavItem(id = "partidos", titleResId = R.string.nav_partidos, icon = Icons.Filled.Dashboard),
-    NavItem(id = "jugadores", titleResId = R.string.nav_jugadores, icon = Icons.Filled.People),
-    NavItem(id = "alineaciones", titleResId = R.string.nav_alineaciones, icon = Icons.Filled.AlignHorizontalLeft),
-    NavItem(id = "estadisticas", titleResId = R.string.nav_estadisticas, icon = Icons.Filled.BarChart),
-    NavItem(id = "record", titleResId = R.string.nav_record, icon = Icons.Filled.Star),
-    NavItem(id = "elementos", titleResId = R.string.nav_elementos, icon = Icons.Filled.Settings), // Este es el "Elementos Adicionales"
-    NavItem(id = "campos", titleResId = R.string.nav_campos, icon = Icons.Filled.Place),
-    // El item de Ajustes se manejará de forma especial en el drawer, pero podría estar aquí si quisieras un comportamiento estándar
-    // NavItem(id = "ajustes", titleResId = R.string.nav_ajustes, icon = Icons.Filled.Settings, isSettings = true)
-)
-
-// Item específico para Ajustes (lo definimos separado para darle un tratamiento especial)
-val settingsNavItem = NavItem(id = "ajustes", titleResId = R.string.nav_ajustes, icon = Icons.Filled.Settings, isSettings = true)
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -110,9 +79,18 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppContent(authViewModel: AuthViewModel = viewModel(), teamViewModel: TeamViewModel = viewModel()) {
+fun AppContent(
+    authViewModel: AuthViewModel = viewModel(),
+    teamViewModel: TeamViewModel = viewModel(),
+    roleViewModel: RoleViewModel = viewModel()
+) {
     val currentUser = authViewModel.currentUser
     var isLoggedIn by remember { mutableStateOf(currentUser != null) }
+    var showSignup by remember { mutableStateOf(false) }
+
+    // Estado del rol del usuario
+    val currentUserRole by roleViewModel.currentUserRole.collectAsState()
+    var currentTeamId by remember { mutableStateOf<String?>(null) }
 
     // Observe authentication state changes
     LaunchedEffect(currentUser) {
@@ -120,7 +98,17 @@ fun AppContent(authViewModel: AuthViewModel = viewModel(), teamViewModel: TeamVi
     }
 
     if (!isLoggedIn) {
-        LoginScreen(onLoginSuccess = { isLoggedIn = true })
+        if (showSignup) {
+            SignupScreen(
+                onSignupSuccess = { isLoggedIn = true },
+                onNavigateToLogin = { showSignup = false }
+            )
+        } else {
+            LoginScreen(
+                onLoginSuccess = { isLoggedIn = true },
+                onNavigateToSignup = { showSignup = true }
+            )
+        }
         return
     }
 
@@ -130,28 +118,84 @@ fun AppContent(authViewModel: AuthViewModel = viewModel(), teamViewModel: TeamVi
             teamViewModel.startListeningToTeamsForUser(userId)
         }
     }
+    
+    // Obtener el primer equipo del usuario (puedes mejorar esto para seleccionar equipo)
+    val teams by teamViewModel.teams.collectAsState()
+    LaunchedEffect(teams) {
+        if (teams.isNotEmpty() && currentTeamId == null) {
+            currentTeamId = teams.first().id
+        }
+    }
+    
+    // Cargar rol del usuario cuando tengamos el teamId
+    LaunchedEffect(currentUser?.uid, currentTeamId) {
+        if (currentUser?.uid != null && currentTeamId != null) {
+            roleViewModel.loadCurrentUserRole(currentUser.uid, currentTeamId!!)
+        }
+    }
 
-    var selectedItem by remember { mutableStateOf<NavItem?>(navigationItemsList.firstOrNull { it.id == "principal" }) }
+    // Obtener items de navegación según el rol
+    val navigationItems = remember(currentUserRole) {
+        RoleBasedNavigation.getNavigationItemsForRole(currentUserRole)
+    }
+    
+    // Pantalla inicial según el rol
+    val defaultScreen = remember(currentUserRole) {
+        RoleBasedNavigation.getDefaultScreenForRole(currentUserRole)
+    }
+    
+    var selectedItem by remember(defaultScreen) {
+        mutableStateOf<NavItem?>(navigationItems.firstOrNull { it.id == defaultScreen })
+    }
+    
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(
-                // Puedes ajustar el ancho del drawer aquí si es necesario, pero por defecto se adapta bien.
-                // modifier = Modifier.width(300.dp) // Ejemplo
-            ) {
+            ModalDrawerSheet {
                 Spacer(Modifier.height(16.dp))
-                Text(
-                    text = stringResource(R.string.app_name),
-                    style = MaterialTheme.typography.titleLarge,
+                
+                // Header con información del usuario y rol
+                Column(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                ) {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    
+                    // Mostrar rol del usuario
+                    currentUserRole?.let { role ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = role.displayName,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = RoleBasedNavigation.getRoleDescription(role),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+                
                 Divider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
 
-                // Items de navegación regulares
-                navigationItemsList.forEach { item ->
+                // Items de navegación filtrados por rol
+                navigationItems.forEach { item ->
                     NavigationDrawerItem(
                         icon = { Icon(item.icon, contentDescription = stringResource(item.titleResId)) },
                         label = { Text(stringResource(item.titleResId)) },
@@ -164,42 +208,31 @@ fun AppContent(authViewModel: AuthViewModel = viewModel(), teamViewModel: TeamVi
                     )
                 }
 
-                Spacer(Modifier.weight(1f)) // Empuja el botón de Ajustes hacia abajo
+                Spacer(Modifier.weight(1f))
 
-                // Botón de Ajustes destacado y de ancho completo
-                // Usamos un Box para poder aplicar un fondo si queremos destacarlo más
+                // Botón de Ajustes (siempre visible)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp) // Padding alrededor del botón de ajustes
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     NavigationDrawerItem(
-                        icon = { Icon(settingsNavItem.icon, contentDescription = stringResource(settingsNavItem.titleResId)) },
+                        icon = { Icon(RoleBasedNavigation.settingsNavItem.icon, contentDescription = stringResource(RoleBasedNavigation.settingsNavItem.titleResId)) },
                         label = {
                             Text(
-                                stringResource(settingsNavItem.titleResId),
-                                fontWeight = FontWeight.Bold // Opcional: texto en negrita para destacar
+                                stringResource(RoleBasedNavigation.settingsNavItem.titleResId),
+                                fontWeight = FontWeight.Bold
                             )
                         },
-                        selected = settingsNavItem.id == selectedItem?.id, // Para que se marque como seleccionado
+                        selected = RoleBasedNavigation.settingsNavItem.id == selectedItem?.id,
                         onClick = {
-                            selectedItem = settingsNavItem
+                            selectedItem = RoleBasedNavigation.settingsNavItem
                             scope.launch { drawerState.close() }
                         },
-                        modifier = Modifier.fillMaxWidth(), // El item interno ocupa el ancho del Box padre
-                        // Colores personalizados para destacar el botón de Ajustes
-                        colors = NavigationDrawerItemDefaults.colors(
-                            // Puedes cambiar estos colores para que destaque
-                            // selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            // unselectedContainerColor = MaterialTheme.colorScheme.surfaceVariant, // Ejemplo de color de fondo
-                            // selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            // unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            // selectedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            // unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
-                Spacer(Modifier.height(12.dp)) // Espacio debajo del botón de Ajustes
+                Spacer(Modifier.height(12.dp))
             }
         }
     ) {
@@ -232,17 +265,28 @@ fun AppContent(authViewModel: AuthViewModel = viewModel(), teamViewModel: TeamVi
                     .padding(innerPadding)
             ) {
                 when (selectedItem?.id) {
-                    "principal" -> PrincipalScreen()
+                    "principal" -> PrincipalScreen(userRole = currentUserRole)
                     "proximo" -> ProximoPartidoScreen()
                     "mi_equipo" -> MiEquipoScreen()
-                    "partidos" -> PartidosScreen()
-                    "jugadores" -> JugadoresScreen()
-                    "alineaciones" -> AlineacionesScreen()
+                    "partidos" -> PartidosScreen(userRole = currentUserRole)
+                    "jugadores" -> JugadoresScreen(userRole = currentUserRole)
+                    "alineaciones" -> AlineacionesScreen(userRole = currentUserRole)
                     "estadisticas" -> EstadisticasScreen()
                     "record" -> RecordScreen()
                     "elementos" -> ElementosScreen()
-                    "campos" -> CamposScreen()
-                    "ajustes" -> AjustesScreen() // NUEVO CASO PARA AJUSTES
+                    "campos" -> CamposScreen(userRole = currentUserRole)
+                    "ai_assistant" -> AIAssistantScreen()
+                    "roles" -> {
+                        if (currentTeamId != null && currentUser?.uid != null) {
+                            RoleManagementScreen(
+                                teamId = currentTeamId!!,
+                                currentUserId = currentUser.uid
+                            )
+                        } else {
+                            Text("Cargando...", modifier = Modifier.padding(16.dp))
+                        }
+                    }
+                    "ajustes" -> AjustesScreen()
                     else -> {
                         Column(
                             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -260,21 +304,182 @@ fun AppContent(authViewModel: AuthViewModel = viewModel(), teamViewModel: TeamVi
     }
 }
 
-// --- Pantalla Principal ---
+// Pantallas con información del rol
 @Composable
-fun PrincipalScreen() {
+fun PrincipalScreen(userRole: com.example.futbolapp.models.UserRole?) {
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
-        Text(stringResource(R.string.titulo_principal_screen), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(bottom = 16.dp))
-        Text(stringResource(R.string.descripcion_principal_screen), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 24.dp))
-        // ... (contenido de PrincipalScreen)
+        Text(
+            stringResource(R.string.titulo_principal_screen),
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+        
+        userRole?.let { role ->
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        "Vista personalizada para: ${role.displayName}",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        RoleBasedNavigation.getRoleDescription(role),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        }
+        
+        Text(
+            stringResource(R.string.descripcion_principal_screen),
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
 
-// --- NUEVA Pantalla de Ajustes ---
+@Composable
+fun PartidosScreen(userRole: com.example.futbolapp.models.UserRole?) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(stringResource(R.string.contenido_partidos), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.desc_partidos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Mostrar opciones según el rol
+        when (userRole) {
+            com.example.futbolapp.models.UserRole.ENTRENADOR,
+            com.example.futbolapp.models.UserRole.SEGUNDO,
+            com.example.futbolapp.models.UserRole.COORDINADOR -> {
+                Text("Puedes crear y gestionar partidos", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+            com.example.futbolapp.models.UserRole.JUGADOR -> {
+                Text("Solo puedes ver los partidos", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            }
+            else -> {}
+        }
+    }
+}
+
+@Composable
+fun JugadoresScreen(userRole: com.example.futbolapp.models.UserRole?) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(stringResource(R.string.contenido_jugadores), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.desc_jugadores), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        when (userRole) {
+            com.example.futbolapp.models.UserRole.ENTRENADOR,
+            com.example.futbolapp.models.UserRole.SEGUNDO -> {
+                Text("Puedes añadir, editar y eliminar jugadores", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+            com.example.futbolapp.models.UserRole.FISIO -> {
+                Text("Puedes ver jugadores y gestionar su estado físico", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+            else -> {}
+        }
+    }
+}
+
+@Composable
+fun AlineacionesScreen(userRole: com.example.futbolapp.models.UserRole?) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(stringResource(R.string.contenido_alineaciones), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.desc_alineaciones), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        when (userRole) {
+            com.example.futbolapp.models.UserRole.ENTRENADOR,
+            com.example.futbolapp.models.UserRole.SEGUNDO -> {
+                Text("Puedes crear y modificar alineaciones", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+            com.example.futbolapp.models.UserRole.JUGADOR -> {
+                Text("Solo puedes ver las alineaciones", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+            }
+            else -> {}
+        }
+    }
+}
+
+@Composable
+fun CamposScreen(userRole: com.example.futbolapp.models.UserRole?) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(stringResource(R.string.contenido_campos), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.desc_campos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        when (userRole) {
+            com.example.futbolapp.models.UserRole.ENTRENADOR,
+            com.example.futbolapp.models.UserRole.COORDINADOR -> {
+                Text("Puedes gestionar los campos de juego", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
+            else -> {}
+        }
+    }
+}
+
+// Pantallas sin cambios por rol
+@Composable
+fun ProximoPartidoScreen() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(stringResource(R.string.contenido_proximo), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.desc_proximo), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+    }
+}
+
+@Composable
+fun MiEquipoScreen(teamViewModel: TeamViewModel = viewModel()) {
+    val teams by teamViewModel.teams.collectAsState()
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.Start) {
+        Text(stringResource(R.string.contenido_mi_equipo), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
+
+        if (teams.isEmpty()) {
+            Text("No tienes equipos registrados.", style = MaterialTheme.typography.bodyMedium)
+        } else {
+            teams.forEach { team ->
+                Text("Equipo: ${team.name}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 8.dp))
+                Text("Descripción: ${team.description}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun EstadisticasScreen() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(stringResource(R.string.contenido_estadisticas), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.desc_estadisticas), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+    }
+}
+
+@Composable
+fun RecordScreen() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(stringResource(R.string.contenido_record), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.desc_record), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+    }
+}
+
+@Composable
+fun ElementosScreen() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(stringResource(R.string.nav_elementos), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.desc_elementos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AjustesScreen(
@@ -301,14 +506,12 @@ fun AjustesScreen(
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        // Sección de Tema
         Text(
             text = "Tema de la aplicación",
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Botones para seleccionar tema
         androidx.compose.material3.Card(
             modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
         ) {
@@ -350,7 +553,6 @@ fun AjustesScreen(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Botón de Cerrar Sesión
         androidx.compose.material3.Button(
             onClick = { showLogoutDialog = true },
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -362,7 +564,6 @@ fun AjustesScreen(
         }
     }
 
-    // Diálogo de confirmación
     if (showLogoutDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
@@ -390,84 +591,6 @@ fun AjustesScreen(
         )
     }
 }
-
-
-// --- Composables Placeholder para las otras pantallas (DEBES CREARLOS O ADAPTARLOS) ---
-@Composable
-fun ProximoPartidoScreen() {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.contenido_proximo), style = MaterialTheme.typography.headlineSmall)
-        Text(stringResource(R.string.desc_proximo), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
-    }
-}
-
-@Composable
-fun MiEquipoScreen(teamViewModel: TeamViewModel = viewModel()) {
-    val teams by teamViewModel.teams.collectAsState()
-
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.Start) {
-        Text(stringResource(R.string.contenido_mi_equipo), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 16.dp))
-
-        if (teams.isEmpty()) {
-            Text("No tienes equipos registrados.", style = MaterialTheme.typography.bodyMedium)
-        } else {
-            teams.forEach { team ->
-                Text("Equipo: ${team.name}", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(bottom = 8.dp))
-                Text("Descripción: ${team.description}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 16.dp))
-            }
-        }
-    }
-}
-@Composable
-fun PartidosScreen() {
-     Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.contenido_partidos), style = MaterialTheme.typography.headlineSmall)
-         Text(stringResource(R.string.desc_partidos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
-    }
-}
-@Composable
-fun JugadoresScreen() {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.contenido_jugadores), style = MaterialTheme.typography.headlineSmall)
-        Text(stringResource(R.string.desc_jugadores), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
-    }
-}
-@Composable
-fun AlineacionesScreen() {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.contenido_alineaciones), style = MaterialTheme.typography.headlineSmall)
-        Text(stringResource(R.string.desc_alineaciones), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
-    }
-}
-@Composable
-fun EstadisticasScreen() {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.contenido_estadisticas), style = MaterialTheme.typography.headlineSmall)
-        Text(stringResource(R.string.desc_estadisticas), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
-    }
-}
-@Composable
-fun RecordScreen() {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.contenido_record), style = MaterialTheme.typography.headlineSmall)
-        Text(stringResource(R.string.desc_record), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
-    }
-}
-@Composable
-fun ElementosScreen() { // Este es el que tenías como "Elementos Adicionales"
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.nav_elementos), style = MaterialTheme.typography.headlineSmall) // Usando el string de nav_elementos
-        Text(stringResource(R.string.desc_elementos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
-    }
-}
-@Composable
-fun CamposScreen() {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(stringResource(R.string.contenido_campos), style = MaterialTheme.typography.headlineSmall)
-        Text(stringResource(R.string.desc_campos), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top=8.dp))
-    }
-}
-
 
 @Preview(showBackground = true)
 @Composable

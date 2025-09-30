@@ -17,6 +17,7 @@
     <string name="nav_elementos">Elementos Adicionales</string>
     <string name="nav_campos">Campos de Juego</string>
     <string name="nav_ajustes">Ajustes</string>
+    <string name="nav_roles">Gestión de Roles</string>
 
     <!-- Contenido para cada sección -->
     <!-- NUEVAS strings para la pantalla principal -->
@@ -47,4 +48,11 @@
     <string name="contenido_record">Historial</string>
     <string name="contenido_elementos">Elementos Adicionales</string>
     <string name="contenido_campos">Campos de Juego</string>
+
+    <!-- AI Assistant strings -->
+    <string name="nav_ai_assistant">Asistente IA</string>
+    <string name="ai_assistant_title">Asistente Inteligente</string>
+    <string name="ai_assistant_subtitle">Escribe en lenguaje natural y te ayudo con la gestión del equipo</string>
+    <string name="ai_placeholder">Ej: "Tengo un partido mañana a las 17:00 contra Real Madrid"</string>
+    <string name="send_message">Enviar mensaje</string>
 </resources>
