@@ -77,6 +77,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:32.2.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-functions-ktx")
 
     // Security crypto for encrypted shared preferences
     implementation("androidx.security:security-crypto:1.1.0-alpha06")

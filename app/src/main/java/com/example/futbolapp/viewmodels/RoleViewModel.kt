@@ -5,8 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.futbolapp.Permission
 import com.example.futbolapp.RoleManager
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.HttpsCallableResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,6 +88,12 @@ class RoleViewModel : ViewModel() {
         }
     }
 
+    fun assignRole(userId: String, teamId: String, role: String, name: String, email: String) {
+        // This method is called from RoleManagementScreen
+        // For now, just call assignRoleToUser with dummy callbacks
+        assignRoleToUser(userId, teamId, role, {}, { error -> Log.e("RoleViewModel", error) })
+    }
+
     fun assignRoleToUser(userId: String, teamId: String, role: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             try {
@@ -93,6 +103,21 @@ class RoleViewModel : ViewModel() {
                     return@launch
                 }
 
+                // Llamar a la función de Firebase
+                val functions = FirebaseFunctions.getInstance()
+                val data = hashMapOf(
+                    "uid" to userId,
+                    "role" to role
+                )
+
+                val result = functions
+                    .getHttpsCallable("asignarRol")
+                    .call(data)
+                    .await()
+
+                Log.d("RoleViewModel", "Rol asignado: ${result.data}")
+
+                // También actualizar Firestore para mantener consistencia local
                 val roleData = mapOf(
                     "userId" to userId,
                     "teamId" to teamId,
@@ -106,7 +131,6 @@ class RoleViewModel : ViewModel() {
                     .set(roleData)
                     .await()
 
-                Log.d("RoleViewModel", "Rol asignado: $role a usuario $userId en equipo $teamId")
                 onSuccess()
             } catch (e: Exception) {
                 Log.e("RoleViewModel", "Error asignando rol: ${e.message}", e)
