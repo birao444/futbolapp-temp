@@ -21,11 +21,15 @@ class AuthViewModel : ViewModel() {
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
     val currentUser: StateFlow<FirebaseUser?> = _currentUser.asStateFlow()
 
+    private val _userRole = MutableStateFlow<String>("desconocido")
+    val userRole: StateFlow<String> = _userRole.asStateFlow()
+
     private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
         val user = firebaseAuth.currentUser
         if (_currentUser.value?.uid != user?.uid) {
             _currentUser.value = user
             Log.d("AuthViewModel", "AuthStateListener: Usuario cambiado a: ${user?.uid ?: "null"}")
+            fetchUserRole()
         }
     }
 
@@ -40,6 +44,7 @@ class AuthViewModel : ViewModel() {
             auth.signOut()
             Log.d("AuthViewModel", "Firebase auth.signOut() ejecutado.")
         }
+        _userRole.value = "desconocido"
     }
 
     // Ejemplo de funciones signIn y signUp
@@ -94,6 +99,24 @@ class AuthViewModel : ViewModel() {
         }
     }
 
+    private fun fetchUserRole() {
+        val user = auth.currentUser
+        if (user != null) {
+            user.getIdToken(true)
+                .addOnSuccessListener { result ->
+                    val claims = result.claims
+                    val role = claims["role"] as? String ?: "desconocido"
+                    _userRole.value = role
+                    Log.d("AuthViewModel", "🔑 Rol del usuario: $role")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("AuthViewModel", "❌ Error al obtener rol", e)
+                    _userRole.value = "desconocido"
+                }
+        } else {
+            _userRole.value = "desconocido"
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()

@@ -69,9 +69,10 @@ class MainActivity : ComponentActivity() {
 fun AppContent(authViewModel: AuthViewModel = viewModel()) {
 
     val currentUser by authViewModel.currentUser.collectAsStateWithLifecycle() // Necesita el import
+    val userRole by authViewModel.userRole.collectAsStateWithLifecycle() // Nuevo: obtener rol real
     val isLoggedIn = currentUser != null
 
-    Log.d("AppContent", "Recomponiendo. Usuario: ${currentUser?.uid ?: "null"}, isLoggedIn: $isLoggedIn")
+    Log.d("AppContent", "Recomponiendo. Usuario: ${currentUser?.uid ?: "null"}, isLoggedIn: $isLoggedIn, Rol: $userRole")
 
     if (!isLoggedIn) {
         Log.d("AppContent", "Usuario NO logueado. Mostrando LoginScreen.")
@@ -83,13 +84,7 @@ fun AppContent(authViewModel: AuthViewModel = viewModel()) {
         )
     } else {
         Log.d("AppContent", "Usuario SÍ logueado (${currentUser?.uid}). Mostrando contenido principal.")
-
-        val userRole = remember(currentUser) { // Simulación de rol
-            if (currentUser?.email?.contains("entrenador@") == true) "entrenador"
-            else if (currentUser?.email?.contains("jugador@") == true) "jugador"
-            else "desconocido"
-        }
-        Log.d("AppContent", "Rol (simulado): $userRole")
+        Log.d("AppContent", "Rol real: $userRole")
 
         val visibleNavigationItems = remember(userRole) {
             navigationItemsList.filter { item ->
