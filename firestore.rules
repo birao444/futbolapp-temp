@@ -1,133 +1,18 @@
-rules_version = '2';
+rules_version='2'
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Función auxiliar para verificar si el usuario está autenticado
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    // Función para obtener el rol del usuario en un equipo
-    function getUserRole(teamId) {
-      return get(/databases/$(database)/documents/team_members/$(request.auth.uid + '-' + teamId)).data.role;
-    }
-    
-    // Función para verificar si el usuario es entrenador del equipo
-    function isCoach(teamId) {
-      return isSignedIn() && getUserRole(teamId) == 'ENTRENADOR';
-    }
-    
-    // Función para verificar si el usuario es miembro del equipo
-    function isTeamMember(teamId) {
-      return isSignedIn() && exists(/databases/$(database)/documents/team_members/$(request.auth.uid + '-' + teamId));
-    }
-    
-    // Reglas para usuarios
-    match /users/{userId} {
-      // Cualquier usuario autenticado puede leer su propia información
-      allow read: if isSignedIn() && request.auth.uid == userId;
-      // Solo el propio usuario puede escribir su información
-      allow write: if isSignedIn() && request.auth.uid == userId;
-    }
-    
-    // Reglas para equipos
-    match /teams/{teamId} {
-      // Los miembros del equipo pueden leer
-      allow read: if isSignedIn() && isTeamMember(teamId);
-      // Solo el entrenador puede crear/actualizar el equipo
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && isCoach(teamId);
-    }
-    
-    // Reglas para miembros del equipo (roles)
-    match /team_members/{memberId} {
-      // Todos los miembros del equipo pueden ver la lista de miembros
-      allow read: if isSignedIn() && isTeamMember(resource.data.teamId);
-      // Solo el entrenador puede asignar/modificar roles
-      allow create, update, delete: if isSignedIn() && isCoach(resource.data.teamId);
-    }
-    
-    // Reglas para partidos
-    match /matches/{matchId} {
-      // Los miembros del equipo pueden leer partidos
-      allow read: if isSignedIn() && (
-        isTeamMember(resource.data.homeTeamId) || 
-        isTeamMember(resource.data.awayTeamId)
-      );
-      // Entrenador, segundo y coordinador pueden crear/editar partidos
-      allow create, update: if isSignedIn() && (
-        isCoach(resource.data.homeTeamId) ||
-        getUserRole(resource.data.homeTeamId) in ['SEGUNDO', 'COORDINADOR']
-      );
-      // Solo el entrenador puede eliminar partidos
-      allow delete: if isSignedIn() && isCoach(resource.data.homeTeamId);
-    }
-    
-    // Reglas para jugadores
-    match /players/{playerId} {
-      // Los miembros del equipo pueden ver jugadores
-      allow read: if isSignedIn() && isTeamMember(resource.data.teamId);
-      // Entrenador y segundo pueden gestionar jugadores
-      allow create, update, delete: if isSignedIn() && (
-        isCoach(resource.data.teamId) ||
-        getUserRole(resource.data.teamId) == 'SEGUNDO'
-      );
-    }
-    
-    // Reglas para alineaciones
-    match /lineups/{lineupId} {
-      // Los miembros del equipo pueden ver alineaciones
-      allow read: if isSignedIn() && isTeamMember(resource.data.teamId);
-      // Entrenador y segundo pueden gestionar alineaciones
-      allow create, update, delete: if isSignedIn() && (
-        isCoach(resource.data.teamId) ||
-        getUserRole(resource.data.teamId) == 'SEGUNDO'
-      );
-    }
-    
-    // Reglas para estadísticas
-    match /statistics/{statsId} {
-      // Todos los miembros del equipo pueden ver estadísticas
-      allow read: if isSignedIn() && isTeamMember(resource.data.teamId);
-      // Entrenador, segundo y coordinador pueden actualizar estadísticas
-      allow create, update: if isSignedIn() && (
-        isCoach(resource.data.teamId) ||
-        getUserRole(resource.data.teamId) in ['SEGUNDO', 'COORDINADOR']
-      );
-      // Solo el entrenador puede eliminar estadísticas
-      allow delete: if isSignedIn() && isCoach(resource.data.teamId);
-    }
-    
-    // Reglas para campos de juego
-    match /fields/{fieldId} {
-      // Todos pueden leer campos
-      allow read: if isSignedIn();
-      // Solo entrenador y coordinador pueden gestionar campos
-      allow create, update, delete: if isSignedIn() && (
-        isCoach(resource.data.teamId) ||
-        getUserRole(resource.data.teamId) == 'COORDINADOR'
-      );
-    }
-    
-    // Reglas para mejoras del equipo
-    match /improvements/{improvementId} {
-      // Los miembros del equipo pueden ver mejoras
-      allow read: if isSignedIn() && isTeamMember(resource.data.teamId);
-      // Solo el entrenador puede gestionar mejoras
-      allow create, update, delete: if isSignedIn() && isCoach(resource.data.teamId);
-    }
-    
-    // Reglas para estado físico de jugadores (para fisioterapeutas)
-    match /player_health/{healthId} {
-      // Miembros del equipo pueden ver
-      allow read: if isSignedIn() && isTeamMember(resource.data.teamId);
-      // Entrenador, segundo y fisio pueden gestionar
-      allow create, update: if isSignedIn() && (
-        isCoach(resource.data.teamId) ||
-        getUserRole(resource.data.teamId) in ['SEGUNDO', 'FISIO']
-      );
-      // Solo entrenador puede eliminar
-      allow delete: if isSignedIn() && isCoach(resource.data.teamId);
+    match /{document=**} {
+      // This rule allows anyone with your database reference to view, edit,
+      // and delete all data in your database. It is useful for getting
+      // started, but it is configured to expire after 30 days because it
+      // leaves your app open to attackers. At that time, all client
+      // requests to your database will be denied.
+      //
+      // Make sure to write security rules for your app before that time, or
+      // else all client requests to your database will be denied until you
+      // update your rules.
+      allow read, write: if request.time < timestamp.date(2025, 10, 31);
     }
   }
 }
