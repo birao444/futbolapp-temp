@@ -14,3 +14,11 @@
 .cxx
 local.properties
 /futbolapk
+
+# Sensitive files
+google-services.json
+serviceAccountKey.json
+.env
+app/google-services.json
+functions/serviceAccountKey.json
+firebase-scripts/serviceAccountKey.json
