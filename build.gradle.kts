@@ -10,14 +10,7 @@ plugins {
     // id 'com.google.dagger.hilt.android' version '2.51' apply false // Ejemplo Hilt
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        // Otros repositorios como jitpack.io si los necesitas
-        // maven("https://jitpack.io")
-    }
-}
+// El bloque 'allprojects { repositories { ... } }' ha sido eliminado.
 
 tasks.register<Delete>("clean") {
     delete(rootProject.buildDir)
