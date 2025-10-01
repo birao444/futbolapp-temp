@@ -1,5 +1,6 @@
 package com.example.futbolapp.ui
 
+import android.content.SharedPreferences
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -13,6 +14,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import com.example.futbolapp.viewmodels.AuthViewModel
 import com.example.futbolapp.ui.theme.FutbolAppTheme
 
@@ -26,8 +29,33 @@ fun LoginScreen(
     var name by remember { mutableStateOf("") }
     var isSignUp by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var rememberUser by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
+    val masterKey = remember {
+        MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+    }
+
+    val sharedPreferences = remember {
+        EncryptedSharedPreferences.create(
+            context,
+            "user_prefs",
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        val savedEmail = sharedPreferences.getString("saved_email", "")
+        if (savedEmail?.isNotEmpty() == true) {
+            email = savedEmail
+            rememberUser = true
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -70,7 +98,19 @@ fun LoginScreen(
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Checkbox(
+                checked = rememberUser,
+                onCheckedChange = { rememberUser = it }
+            )
+            Text("Recordar usuario")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = {
@@ -80,6 +120,7 @@ fun LoginScreen(
                         onSuccess = {
                             isLoading = false
                             Log.d("LoginScreen", "Registro exitoso")
+                            sharedPreferences.edit().putString("saved_email", if (rememberUser) email else "").apply()
                             onLoginSuccess()
                         },
                         onError = { errorMsg ->
@@ -93,6 +134,7 @@ fun LoginScreen(
                         onSuccess = {
                             isLoading = false
                             Log.d("LoginScreen", "Inicio de sesión exitoso")
+                            sharedPreferences.edit().putString("saved_email", if (rememberUser) email else "").apply()
                             onLoginSuccess()
                         },
                         onError = { errorMsg ->
