@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column // <--- IMPORT PARA Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.futbolapp.ui.LoginScreen // Asegúrate que la ruta sea correcta
 import com.example.futbolapp.ui.theme.FutbolAppTheme
 import com.example.futbolapp.viewmodels.AuthViewModel // Asegúrate que la ruta sea correcta
+import com.example.futbolapp.viewmodels.ThemeViewModel
 import kotlinx.coroutines.launch
 
 // --- DEFINICIONES DE DATOS Y LISTAS (COMO LAS TENÍAS) ---
@@ -40,9 +42,17 @@ data class NavItem(
 
 val navigationItemsList = listOf(
     NavItem("principal", R.string.nav_principal, Icons.Filled.Home),
-    NavItem("proximo", R.string.nav_proximo_partido, Icons.Filled.Event),
+    NavItem("proximo_partido", R.string.nav_proximo_partido, Icons.Filled.Event),
     NavItem("mi_equipo", R.string.nav_mi_equipo, Icons.Filled.Group),
-    NavItem("ajustes", R.string.nav_ajustes, Icons.Filled.Settings)
+    NavItem("jugadores", R.string.nav_jugadores, Icons.Filled.Person),
+    NavItem("alineaciones", R.string.nav_alineaciones, Icons.Filled.List),
+    NavItem("estadisticas", R.string.nav_estadisticas, Icons.Filled.BarChart),
+    NavItem("partidos", R.string.nav_partidos, Icons.Filled.SportsSoccer),
+    NavItem("campos", R.string.nav_campos, Icons.Filled.LocationOn),
+    NavItem("elementos", R.string.nav_elementos, Icons.Filled.Build),
+    NavItem("record", R.string.nav_record, Icons.Filled.Star),
+    NavItem("roles", R.string.nav_roles, Icons.Filled.AdminPanelSettings),
+    NavItem("ai_assistant", R.string.nav_ai_assistant, Icons.Filled.SmartToy)
 )
 val settingsNavItem = NavItem("ajustes", R.string.nav_ajustes, Icons.Filled.Settings)
 
@@ -88,11 +98,7 @@ fun AppContent(authViewModel: AuthViewModel = viewModel()) {
 
         val visibleNavigationItems = remember(userRole) {
             navigationItemsList.filter { item ->
-                when (item.id) {
-                    "mi_equipo" -> userRole == "entrenador" || userRole == "jugador"
-                    "proximo" -> true
-                    else -> true
-                }
+                RoleManager.canAccessScreen(userRole, item.id)
             }.filterNot { it.id == "ajustes" }
         }
 
@@ -174,8 +180,8 @@ fun AppContent(authViewModel: AuthViewModel = viewModel()) {
                     // Navegación de contenido (Asegúrate que estas pantallas existan o sean placeholders)
                     when (selectedItem?.id) {
                         "principal" -> PrincipalScreen()
-                        "proximo" -> ProximoPartidoScreen()
-                        "mi_equipo" -> if (userRole == "entrenador" || userRole == "jugador") MiEquipoScreen() else AccesoDenegadoScreen(item = selectedItem)
+                        "proximo_partido" -> ProximoPartidoScreen()
+                        "mi_equipo" -> MiEquipoScreen()
                         "ajustes" -> AjustesScreen(authViewModel = authViewModel)
                         else -> {
                             Column(
@@ -207,14 +213,46 @@ fun ProximoPartidoScreen() { ScreenPlaceholder(name = "Próximo Partido") }
 fun MiEquipoScreen() { ScreenPlaceholder(name = "Mi Equipo") }
 
 @Composable
-fun AjustesScreen(authViewModel: AuthViewModel) {
+fun AjustesScreen(authViewModel: AuthViewModel, themeViewModel: ThemeViewModel = viewModel()) {
+    val themeMode by themeViewModel.themeMode.collectAsState()
+
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.Start
     ) {
-        Text("Pantalla de Ajustes", style = MaterialTheme.typography.headlineMedium)
+        Text("Ajustes", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(20.dp))
+
+        Text("Tema", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = themeMode == ThemeMode.LIGHT,
+                    onClick = { themeViewModel.setThemeMode(ThemeMode.LIGHT) }
+                )
+                Text("Claro", modifier = Modifier.padding(start = 8.dp))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = themeMode == ThemeMode.DARK,
+                    onClick = { themeViewModel.setThemeMode(ThemeMode.DARK) }
+                )
+                Text("Oscuro", modifier = Modifier.padding(start = 8.dp))
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = themeMode == ThemeMode.SYSTEM,
+                    onClick = { themeViewModel.setThemeMode(ThemeMode.SYSTEM) }
+                )
+                Text("Según sistema", modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
         Button(
             onClick = { authViewModel.signOut() },
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)

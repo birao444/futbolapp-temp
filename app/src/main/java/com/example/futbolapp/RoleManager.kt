@@ -3,6 +3,7 @@ package com.example.futbolapp
 object RoleManager {
 
     // Definición de roles
+    const val ADMIN_ENTRENADOR = "admin_entrenador"
     const val ENTRENADOR = "entrenador"
     const val SEGUNDO = "segundo"
     const val JUGADOR = "jugador"
@@ -12,6 +13,21 @@ object RoleManager {
 
     // Permisos por rol
     private val permissions = mapOf(
+        ADMIN_ENTRENADOR to setOf(
+            Permission.CREATE_TEAM,
+            Permission.EDIT_TEAM,
+            Permission.DELETE_TEAM,
+            Permission.MANAGE_PLAYERS,
+            Permission.CREATE_LINEUPS,
+            Permission.EDIT_LINEUPS,
+            Permission.VIEW_STATISTICS,
+            Permission.EDIT_STATISTICS,
+            Permission.MANAGE_MATCHES,
+            Permission.MANAGE_IMPROVEMENTS,
+            Permission.MANAGE_FIELDS,
+            Permission.ASSIGN_ROLES,
+            Permission.VIEW_ALL_DATA
+        ),
         ENTRENADOR to setOf(
             Permission.CREATE_TEAM,
             Permission.EDIT_TEAM,
@@ -76,6 +92,7 @@ object RoleManager {
 
     // Verificar si un rol puede acceder a una pantalla específica
     fun canAccessScreen(role: String, screenId: String): Boolean {
+        if (role == ADMIN_ENTRENADOR) return true
         return when (screenId) {
             "mi_equipo" -> hasPermission(role, Permission.VIEW_TEAM) || hasPermission(role, Permission.EDIT_TEAM)
             "jugadores" -> hasPermission(role, Permission.MANAGE_PLAYERS) || hasPermission(role, Permission.VIEW_TEAM)
